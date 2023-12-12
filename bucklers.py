@@ -13,8 +13,14 @@ import pandas as pd
 
 class Move:
     def __init__(self,**kwargs):
-        dict = self.__rename(kwargs)
-        self.__dict__.update(dict)
+        #dict = self.__rename(kwargs)
+        #keys = list(kwargs.keys())
+        #for key in keys:
+        #    val = kwargs[key]
+        #    del kwargs[key]
+        #    kwargs[key.lower()] = val
+            
+        self.__dict__.update(kwargs)
 
     def __rename(self,dict):
         new_dict = {}
@@ -102,32 +108,41 @@ class Notation(Enum):
     arrow_3 = ['Then','~']
     key_nutral = ['Neutral','n']
 
-def parse_table(tree):
-    rows = tree.xpath('.//tr')
-    move = []
-    for row in rows:
-        tds = row.xpath('.//td')
-        row_data = {}
-        for td in tds:
-            try:
-                src = td.xpath('.//*[@src]')
-                srcs = []
-                for x in src:
-                    srcs.append(x.attrib['src'])
-                if len(srcs) > 0:
-                    row_data['src'] = srcs
-                clss = td.attrib['class']
-                value = td.xpath('.//text()')[0]
-                row_data[clss] = value
-            except KeyError:
-                pass
-            except IndexError:
-                #value = td.xpath('.//text()')
-                row_data[clss] = ''
-        if len(row_data) > 0:
-            mv = Move(**row_data)
-            move.append(mv)
-    return move
+def pull_moves(tree):
+    tables = []
+    new_tree = tree.xpath('//div/section/div/section/article')
+    tps = tree.xpath('.//div/section//h3/span/text()')
+    i = tps[0]
+    tps = tps[1:]
+    tps.append(i)
+    count = 1
+    index = 0
+    for x in new_tree:
+        
+        headers = x.xpath('./table/thead//tr//th/text()')
+        body =  x.xpath('./table/tbody/tr')
+        moves = []
+        for row in body:
+            #print(row.tag)
+            cols = row.xpath('./td')
+            #print(str(len(cols)) + ' ' + str(len(headers)))
+            #print(cols.text_content())
+            tx = {}
+            for y in range(len(cols)):
+                t = cols[y].text_content()
+                if t == '': t='-'
+                try:
+                    tx[headers[y].replace(' ','_')] = t.replace('+','')
+                except IndexError:
+                    print(headers)
+                    print(cols.text_content())
+                    raise IndexError
+            #tx['type'] = tps[index]
+            moves.append(tx)
+        tables.append(moves)
+        count += 1
+        if count % 5 == 0: index +=1
+    return tables
 
 class Movelist():
 
@@ -136,7 +151,7 @@ class Movelist():
         self.mappings = {}
         index = 0
         for move in self.li:
-            self.mappings[move.name] = index
+            self.mappings[move.input] = index
             index += 1
 
     def __getitem__(self,item):
@@ -181,11 +196,14 @@ class Movelist():
     
     def __compare(self,key,comparator,val,item):
         val = val.strip()
+        #try:
+            #val = int(val)
+        #except ValueError:
+        #    pass
         try:
-            val = int(val)
-        except ValueError:
-            pass
-        it = item[key.strip()]
+            it = item[key.strip()]
+        except AttributeError:
+            return False
         try:
             it = it.lower()
         except AttributeError:
@@ -212,3 +230,40 @@ class Movelist():
 
     def keys(self):
         return self.mappings.keys()
+
+def make_moves():
+    tree = html.fromstring(source)
+    tables = pull_moves(tree)    
+
+    moves = []
+    for table in tables:
+        for move in table:
+            moves.append(move)
+    
+    final_moves = []
+    
+    loop = True
+    index = 0
+    while loop:
+        match = moves.pop(index)
+        inner_loop = True
+        inner_index = 0
+        while inner_loop:
+            try:
+                if match['input'] == moves[inner_index]['input']:
+                    match |= moves.pop(inner_index)
+            except IndexError:
+                inner_loop = False
+            inner_index +=1
+        final_moves.append(Move(**match))
+        if len(moves) <= 0:
+            loop = False
+    moves = Movelist(final_moves)
+    return moves
+
+def get_source():
+    driver = webdriver.Chrome()# Open the website
+    driver.get("https://wiki.supercombo.gg/w/Street_Fighter_6/Guile/Frame_data")
+    source = driver.page_source
+    driver.close()
+    return source
