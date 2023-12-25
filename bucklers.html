@@ -1,0 +1,122 @@
+ <!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Page Title</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<style>
+body {
+    background-image: url("fighting_ground.jpeg");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+}
+td{
+    border-style: solid;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+.hidden{
+    display: none;
+}
+</style>
+ <script src="jquery.js"></script> 
+ <script>
+
+var movelisty = []
+function set_table(){
+    let loops = movelisty.length
+    let i = 0
+    while (i < loops){
+        movelisty.pop
+        i++;
+    }
+    const input = $(".character_select").val()
+    $.getJSON("data/"+input, function(json){parse(json);});
+    //make_table()
+}
+
+function parse(json){
+    //for (let i = 0; i < json.length; i++){
+    //    movelisty.push(json[i])
+    //}
+    make_table(json)
+}
+
+function make_table(movelist){
+    const head = $("#table_head")
+    head.empty()
+    const head_row = $("<tr></tr>")
+    const headers = Object.keys(movelist[0])
+    for (let y = 0; y < headers.length; y++){
+        const td = $("<td></td>")
+        //td.attr("class",headers[y])
+        const btn = $("<button></button")
+        btn.text(headers[y])
+        btn.attr("onclick","toggle(\'"+headers[y]+"\')")
+        btn.attr("type","button")
+        head_row.append(td.append(btn))
+    }
+    head.append(head_row)
+    const body = $("#table_body")
+    body.empty()
+    for (let i = 0; i < movelist.length; i++){
+        const entries = Object.entries(movelist[i]);
+        const row = $("<tr></tr>");
+        for (let x = 0; x < entries.length; x++){
+            const td = $("<td></td>")
+            td.html("<p>"+entries[x][1]+"</p>")
+            td.attr("class",entries[x][0])
+            row.append(td)
+        }
+        body.append(row)
+        
+    }
+}
+
+function toggle(column){
+    console.log(column)
+    $("."+column+" > p").toggleClass("hidden")
+}
+
+ </script>
+<body>
+
+<div>
+<select name='character_select' class='character_select'>
+    <option value="Juri.json">Juri</option>
+    <option value="Ryu.json">Ryu</option>
+    <option value="E.Honda.json">E.Honda</option>
+    <option value="Chun-Li.json">Chun-Li</option>
+    <option value="Luke.json">Luke</option>
+    <option value="Guile.json">Guile</option>
+    <option value="Marisa.json">Marisa</option>
+    <option value="Blanka.json">Blanka</option>
+    <option value="Kimberly.json">Kimberly</option>
+    <option value="Dhalsim.json">Dhalsim</option>
+    <option value="Lily.json">Lily</option>
+    <option value="Ken.json">Ken</option>
+    <option value="Zangief.json">Zangief</option>
+    <option value="A.K.I..json">A.K.I.</option>
+    <option value="Rashid.json">Rashid</option>
+    <option value="Manon.json">Manon</option>
+    <option value="Cammy.json">Cammy</option>
+    <option value="Jamie.json">Jamie</option>
+    <option value="JP.json">JP</option>
+</select>
+    <button type="button" onclick="set_table()">Click Me!</button>
+</div>
+    
+<div>
+    <table>
+        <thead id="table_head">
+            
+        </thead>
+        <tbody id="table_body" class="bdy">
+
+        </tbody>
+    </table>
+</div>
+    
+</body>
+</html> 
